@@ -12,7 +12,7 @@ import config from '../config';
 import './Classify.css';
 import 'cropperjs/dist/cropper.css';
 import { firebaseFirestore } from "../firebase";
-
+import { Redirect } from "react-router-dom";
 
 const MODEL_PATH = '/model/model.json';
 const IMAGE_SIZE = 224;
@@ -50,7 +50,9 @@ export default class Classify extends Component {
       showModelUpdateSuccess: false,
       isDownloadingModel: false,
       user: null,
-      initialPoints: null
+      initialPoints: null,
+      pointAdded: 10,
+      redirect: null
     };
   }
 
@@ -214,7 +216,7 @@ export default class Classify extends Component {
     },
     function(){
       if(this.state.predictions[0].className == "beaker"){
-        this.setState({initialPoints: this.state.initialPoints + 10})
+        this.setState({initialPoints: this.state.initialPoints + this.state.pointAdded})
         console.log("add 10")
       }
     });
@@ -237,7 +239,19 @@ export default class Classify extends Component {
     this.docRef.doc(this.props.location.state.id).update({
       points: this.state.initialPoints
     })
+
+    // alert(this.state.pointAdded+' points added!')
+    this.alertFunction()
+    // console.log(this.state.initialPoints + ' points added!');
+
   }
+
+  alertFunction = () => {
+    if(window.confirm(this.state.pointAdded+' points added!')){
+      this.setState({redirect: '/'})
+    }  
+  }
+  
 
   classifyWebcamImage = async () => {
     this.setState({ isClassifying: true });
@@ -254,6 +268,12 @@ export default class Classify extends Component {
       predictions: preds,
       isClassifying: false,
       photoSettingsOpen: !this.state.photoSettingsOpen
+    },
+    function(){
+      if(this.state.predictions[0].className == "beaker"){
+        this.setState({initialPoints: this.state.initialPoints + this.state.pointAdded})
+        console.log("add 10")
+      }
     });
 
     // Draw thumbnail to UI.
@@ -266,6 +286,18 @@ export default class Classify extends Component {
     imageData.dispose();
     logits.dispose();
     tensorData.dispose();
+
+    
+
+
+    this.docRef.doc(this.props.location.state.id).update({
+      points: this.state.initialPoints
+    })
+
+    // alert(this.state.pointAdded + ' points added!')
+    this.alertFunction()
+    // console.log(this.state.initialPoints + ' points added!');
+
   }
 
   processImage = async (image) => {
@@ -330,6 +362,11 @@ export default class Classify extends Component {
   }
 
   render() {
+    if (this.state.redirect) {
+      return <Redirect to={{
+        pathname : this.state.redirect
+      }} />
+    }
     return (
       <div className="Classify container">
 
